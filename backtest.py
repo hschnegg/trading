@@ -10,7 +10,7 @@ cerebro = bt.Cerebro()
 #    dataname='data/fake.csv')
 
 data = bt.feeds.YahooFinanceData(dataname='XRP-USD',
-                                 fromdate=datetime(2021, 4, 1),
+                                 fromdate=datetime(2021, 3, 18),
                                  todate=datetime(2021, 5, 3))
 
 cerebro.adddata(data)
