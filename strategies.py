@@ -1,10 +1,11 @@
+from datetime import timedelta
 import backtrader as bt
 
 
 class ID_NR4(bt.Strategy):
     '''Street SMart, p. 166'''
 
-    params = (('stop_atr_multiple', 1), )
+    params = (('stop_atr_multiple', 2), )
 
     def __init__(self):
         # Existing orders
@@ -22,9 +23,7 @@ class ID_NR4(bt.Strategy):
 
 
     def next(self):
-        self.log(f'===== L:{ self.datas[0].low[0] } | H: { self.datas[0].high[0] } =====')
-        # print(self.order)
-        # print(self.position)
+        self.log(f'===== L:{ self.datas[0].low[0] } | C: { self.datas[0].close[0] } | H: { self.datas[0].high[0] } =====')
         
         # ID/NR4 signals
         self.is_nr4 = self.nr4[0] == self.tr[0]
@@ -32,26 +31,31 @@ class ID_NR4(bt.Strategy):
                           (self.datas[0].low[0] > self.datas[0].low[-1]))
         self.buy_signal = self.is_nr4 and self.is_id
         self.buy_price = self.datas[0].high[0]
-        self.buy_stop = self.params.stop_atr_multiple * self.atr
-        # self.stop_percent = self.buy_stop / self.buy_price
+        self.low_stop = self.datas[0].low[0]
+        self.limit_stop = self.params.stop_atr_multiple * self.atr
 
         if self.order:
             return
 
         if not self.position:
             if self.buy_signal:
-                self.log(f'BUY CREATE { self.buy_price }')
-                self.order = self.buy(exectype=bt.Order.StopLimit,
-                                      plimit=self.buy_price)
-                                       
-        else:
-            pass
-            # self.log(f'CLOSE CREATE { self.datas[0].close[0] }')
-            # self.order = self.sell(exectype=bt.Order.StopTrail,
-            #                        trailpercent=self.buy_stop)
+                
+                self.log(f'----- Buy Price { self.buy_price } | Low Stop { self.low_stop } | Limit Stop { self.limit_stop } -----')
             
-
-        # self.log(f'High: { self.datas[0].high[0] } Buy Price: { self.buy_price if self.buy_signal else None } Buy Stop: { self.buy_stop if self.buy_signal else None } ')
+                mainside = self.buy(exectype=bt.Order.StopLimit,
+                                    plimit=self.buy_price,
+                                    valid=self.datas[0].datetime.date(0) + timedelta(days=3),
+                                    transmit=False)
+                lowside  = self.sell(price=self.low_stop,
+                                     size=mainside.size,
+                                     exectype=bt.Order.Stop,
+                                     transmit=False,
+                                     parent=mainside)
+                trailside = self.sell(size=mainside.size,
+                                      exectype=bt.Order.StopTrail,
+                                      trailamount=self.limit_stop,
+                                      transmit=True,
+                                      parent=mainside)
 
 
     def notify_order(self, order):
