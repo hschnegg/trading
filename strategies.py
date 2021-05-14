@@ -4,7 +4,9 @@ import math
 
 
 class ID_NR4(bt.Strategy):
-    params = (('stop_atr_multiple', 2), )
+    params = (
+        ('stop_atr_multiple', 2),
+        ('optimise', 0), )
 
 
     def __init__(self):
@@ -30,15 +32,19 @@ class ID_NR4(bt.Strategy):
 
         if self.order:
             status = status + ' Pending Order'
-            self.log(status)
+            if self.params.optimise == 0:
+                self.log(status)
             return
 
         if self.position:
             status = status + ' In Trade'
-            self.log(status)
+            if self.params.optimise == 0:
+                self.log(status)
             return
     
-        self.log(status)
+        if self.params.optimise == 0:
+            if self.params.optimise == 0:
+                self.log(status)
 
         # ID/NR4 signals
         self.is_nr4 = self.nr4[0] == self.tr[0]
@@ -51,7 +57,8 @@ class ID_NR4(bt.Strategy):
         self.size = round(100 / (self.buy_price - self.low_stop), 2)
     
         if self.buy_signal:
-            self.log(f'+++++ Size { self.size } | Buy Price { self.buy_price } | Low Stop { self.low_stop } | Limit Stop { self.limit_stop } +++++')
+            if self.params.optimise == 0:
+                self.log(f'+++++ Size { self.size } | Buy Price { self.buy_price } | Low Stop { self.low_stop } | Limit Stop { self.limit_stop } +++++')
             
             mainside = self.buy(size=self.size,
                                 exectype=bt.Order.StopLimit,
@@ -77,13 +84,16 @@ class ID_NR4(bt.Strategy):
 
         if order.status in [order.Completed]:
             if order.isbuy():
-                self.log(f'BUY EXECUTED, {order.executed.price:.2f}')
+                if self.params.optimise == 0:
+                    self.log(f'BUY EXECUTED, {order.executed.price:.2f}')
             elif order.issell():
-                self.log(f'SELL EXECUTED, {order.executed.price:.2f}')
+                if self.params.optimise == 0:
+                    self.log(f'SELL EXECUTED, {order.executed.price:.2f}')
             self.bar_executed = len(self)
 
         elif order.status in [order.Canceled, order.Margin, order.Rejected]:
-            self.log('Order Canceled/Margin/Rejected')
+            if self.params.optimise == 0:
+                self.log('Order Canceled/Margin/Rejected')
 
         # Reset orders
         self.order = None
@@ -94,5 +104,11 @@ class ID_NR4(bt.Strategy):
             Calcuate Gross and Net Profit/loss'''
             if not trade.isclosed:
                 return
-            selecf.log(f"Operational profit, Gross: {trade.pnl:.2f}, Net: {trade.pnlcomm:.2f}")
+            if self.params.optimise == 0:
+                self.log(f"Operational profit, Gross: {trade.pnl:.2f}, Net: {trade.pnlcomm:.2f}")
+
+
+    def stop(self):
+        if self.params.optimise != 0:
+            self.log(f'///// Param: { self.params.stop_atr_multiple } | Ending value: { self.broker.getvalue() } \\\\\\\\\\')
 

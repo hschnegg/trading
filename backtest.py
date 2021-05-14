@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta
+import numpy as np
 import pandas as pd
 import backtrader as bt
 from strategies import *
@@ -15,8 +16,18 @@ data = bt.feeds.YahooFinanceData(dataname='XRP-USD',
                                  fromdate=datetime(2021, 1, 1),
                                  todate=datetime.now() + timedelta(days=1))
 
+
 cerebro.adddata(data)
-cerebro.addstrategy(ID_NR4)
+
+# Add a strategy
+# cerebro.addstrategy(ID_NR4)
+# With optimisation
+strats = cerebro.optstrategy(
+    ID_NR4,
+    stop_atr_multiple=[1, 1.5, 2, 2.5, 3, 3.5, 4],
+    optimise=1)
+
+
 cerebro.addanalyzer(bt.analyzers.PyFolio, _name='PyFolio')
 
 
