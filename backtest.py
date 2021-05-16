@@ -9,20 +9,29 @@ import quantstats
 cerebro = bt.Cerebro()
 
 
+fromdate = datetime(2021, 1, 1)
+
+
 # data = bt.feeds.YahooFinanceCSVData(
 #    dataname='data/fake.csv')
 
-data = bt.feeds.YahooFinanceData(dataname='XRP-USD',
-                                 fromdate=datetime(2021, 1, 1),
-                                 todate=datetime.now() + timedelta(days=1))
+datalist = [
+    (0, 'XRP-USD'),
+    (1, 'ETH-USD'),
+]
 
 
-cerebro.adddata(data)
+for i in range(len(datalist)):
+    data = bt.feeds.YahooFinanceData(dataname=datalist[i][1],
+                                     fromdate=fromdate,
+                                     todate=datetime.now() + timedelta(days=1))
+    cerebro.adddata(data, name=datalist[i][1])
+
 
 # Add a strategy
-# cerebro.addstrategy(ID_NR4)
+# cerebro.addstrategy(ID_NR4, stop_atr_multiple=2.5)
 # With optimisation
-strats = cerebro.optstrategy(
+cerebro.optstrategy(
     ID_NR4,
     stop_atr_multiple=[1, 1.5, 2, 2.5, 3, 3.5, 4],
     optimise=1)
@@ -34,7 +43,7 @@ cerebro.addanalyzer(bt.analyzers.PyFolio, _name='PyFolio')
 start_portfolio_value = cerebro.broker.getvalue()
 
 
-results = cerebro.run()
+results = cerebro.run(maxcpus=1)
 #cerebro.plot(style='bar')
 
 
